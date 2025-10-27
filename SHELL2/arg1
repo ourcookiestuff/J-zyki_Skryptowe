@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+#Jakub Dziurka
+
+set -e
+
+declare -A opt_jest
+declare -A opt_wartosc
+
+while getopts ":i:o:qabcdefghijklmnoprstuvwxyz" flag; do
+    case "$flag" in
+        q) 
+            echo "Unsupported option: -q"
+            exit 1
+            ;;
+        i|o)
+            opt_jest["$flag"]=1
+            opt_wartosc["$flag"]="$OPTARG"
+            ;;
+        :)
+            echo "-i -o options require a filename"
+            exit 1
+            ;;
+        [a-hj-np-z])
+            opt_jest["$flag"]=1
+            ;;
+    esac
+done
+
+if [[ ${opt_wartosc["i"]} == -* || ${opt_wartosc["o"]} == -* ]] ; then
+    echo "-i -o options require a filename"
+    exit 1
+fi
+
+shift $((OPTIND - 1))
+
+for letter in {a..z}; do
+    if [[ "$letter" == "q" ]]; then
+        continue
+    fi
+    if [[ -n "${opt_jest[$letter]}" ]]; then
+        if [[ "$letter" == "i" || "$letter" == "o" ]]; then
+            printf -- "-%s present and set to \"%s\"\n" "$letter" "${opt_wartosc[$letter]}"
+        else
+            printf -- "-%s present\n" "$letter"
+        fi
+    fi
+done
+
+if (( $# > 0 )); then
+    echo "Arguments are:"
+    idx=1
+    for arg in "$@"; do
+        printf '$%d=%s\n' "$idx" "$arg"
+        ((idx++))
+    done
+fi
