@@ -1,0 +1,75 @@
+#!/usr/bin/env bash
+#Jakub Dziurka
+
+set -e
+
+SHORT="i:o:qabcdefghijklmnoprstuvwxyz"
+LONG="help"
+
+PARSED=$(getopt --options="$SHORT" --longoptions="$LONG" --name "$0" -- "$@")
+if [[ $? -ne 0 ]]; then
+    echo "-i -o options require a filename"
+    exit 1
+fi
+eval set -- "$PARSED"
+
+declare -A opt_jest
+declare -A opt_wartosc
+
+while true; do
+    case "$1" in
+        --help)
+            echo "help"
+            exit 0
+            ;;
+        -q)
+            echo "Unsupported option: -q"
+            exit 1
+            ;;
+        -i|-o)
+            opt_jest["${1:1}"]=1
+            opt_wartosc["${1:1}"]="$2"
+            shift 2
+            ;;
+        -[a-hj-np-z])
+            flag="${1:1}"
+            opt_jest["$flag"]=1
+            shift
+            ;;
+        --)
+            shift
+            break
+            ;;
+        *)
+            echo "Unknown option: $1"
+            exit 1
+            ;;
+    esac
+done
+
+if [[ ${opt_wartosc["i"]} == -* || ${opt_wartosc["o"]} == -* ]]; then
+    echo "-i -o options require a filename"
+    exit 1
+fi
+
+for letter in {a..z}; do
+    if [[ "$letter" == "q" ]]; then
+        continue
+    fi
+    if [[ -n "${opt_jest[$letter]}" ]]; then
+        if [[ "$letter" == "i" || "$letter" == "o" ]]; then
+            printf -- "-%s present and set to \"%s\"\n" "$letter" "${opt_wartosc[$letter]}"
+        else
+            printf -- "-%s present\n" "$letter"
+        fi
+    fi
+done
+
+if (( $# > 0 )); then
+    echo "Arguments are:"
+    idx=1
+    for arg in "$@"; do
+        printf '$%d=%s\n' "$idx" "$arg"
+        ((idx++))
+    done
+fi
